@@ -31,7 +31,7 @@ export default function Notice() {
         </p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-6 sticky top-24 z-30 bg-[#fefefe]/80 backdrop-blur-md py-4 border-b border-gray-100">
+      <div className="flex flex-col md:flex-row gap-6 py-6 border-b border-gray-100">
         <div className="relative flex-grow">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
