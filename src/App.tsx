@@ -12,7 +12,7 @@ import Faculty from './pages/Faculty';
 import Login from './pages/Login';
 import Portal from './pages/Portal';
 import Research from './pages/Research';
-import Courses from './pages/Courses';
+import Departments from './pages/Departments';
 import News from './pages/News';
 import Notice from './pages/Notice';
 import VirtualTour from './pages/VirtualTour';
@@ -25,7 +25,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/faculty" element={<Faculty />} />
-            <Route path="/courses" element={<Courses />} />
+            <Route path="/departments" element={<Departments />} />
             <Route path="/research" element={<Research />} />
             <Route path="/news" element={<News />} />
             <Route path="/notice" element={<Notice />} />

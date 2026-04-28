@@ -15,7 +15,7 @@ export default function Navbar() {
   const navItems = [
     { id: 'home', name: t('nav.home'), path: '/', icon: GraduationCap },
     { id: 'faculty', name: t('nav.faculty'), path: '/faculty', icon: User },
-    { id: 'courses', name: t('nav.courses'), path: '/courses', icon: BookOpen },
+    { id: 'departments', name: t('nav.departments'), path: '/departments', icon: BookOpen },
     { id: 'research', name: t('nav.research'), path: '/research', icon: Search },
     { id: 'news', name: t('nav.news'), path: '/news', icon: Newspaper },
     { id: 'notice', name: t('nav.notice'), path: '/notice', icon: Bell },

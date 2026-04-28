@@ -13,7 +13,7 @@ i18n
           nav: {
             home: 'Home',
             faculty: 'Faculty',
-            courses: 'Courses',
+            departments: 'Departments',
             admissions: 'Admissions',
             research: 'Research',
             news: 'News',
@@ -24,7 +24,7 @@ i18n
           home: {
             welcome: 'Welcome to Global Medical College',
             description: 'Shaping the future of medicine with excellence in education and research.',
-            explore: 'Explore Courses',
+            explore: 'Explore Departments',
             tour: 'Virtual Campus Tour'
           },
           portal: {
@@ -39,7 +39,7 @@ i18n
           nav: {
             home: 'Inicio',
             faculty: 'Facultad',
-            courses: 'Cursos',
+            departments: 'Departamentos',
             admissions: 'Admisiones',
             research: 'Investigación',
             news: 'Noticias',
@@ -50,7 +50,7 @@ i18n
           home: {
             welcome: 'Bienvenido al Colegio Médico Global',
             description: 'Forjando el futuro de la medicina con excelencia en educación e investigación.',
-            explore: 'Explorar Cursos',
+            explore: 'Explorar Departamentos',
             tour: 'Recorrido Virtual por el Campus'
           }
         }

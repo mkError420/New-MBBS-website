@@ -105,7 +105,7 @@ export default function Home() {
             </p>
             <div className="flex flex-wrap gap-4 pt-4">
               <Link 
-                to="/courses"
+                to="/departments"
                 className="bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-indigo-700 transition-all flex items-center gap-2 group shadow-lg shadow-indigo-500/20"
               >
                 {t('home.explore')}
