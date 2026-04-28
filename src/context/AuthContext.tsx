@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { UserProfile } from '../types';
+import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 
 interface AuthContextType {
   user: User | null;
@@ -22,17 +23,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(user);
       if (user) {
         const docRef = doc(db, 'users', user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setProfile(docSnap.data() as UserProfile);
-        } else {
-          // If no profile exists, we can create a default one or just leave it null
-          setProfile({
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName,
-            role: 'student' // Default role
-          });
+        try {
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setProfile(docSnap.data() as UserProfile);
+          } else {
+            const role = user.email === 'mk.rabbani.cse@gmail.com' ? 'admin' : 'guest';
+            const newProfile: UserProfile = {
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName,
+              role: role
+            };
+            // Create the profile in Firestore
+            try {
+              await setDoc(docRef, newProfile);
+              setProfile(newProfile);
+            } catch (err) {
+              handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`);
+            }
+          }
+        } catch (error) {
+          handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
         }
       } else {
         setProfile(null);

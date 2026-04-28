@@ -4,9 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { db } from '../lib/firebase';
 import { collection, query, onSnapshot, orderBy, limit, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ChatMessage, Announcement } from '../types';
+import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 import { 
   BarChart3, MessageSquare, Bell, Calendar, User, Settings, LogOut, 
-  Send, Plus, Clock, ExternalLink, ChevronRight, GraduationCap, BookOpen
+  Send, Plus, Clock, ExternalLink, ChevronRight, GraduationCap, BookOpen, Database, FilePlus, Users2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -17,13 +18,40 @@ export default function Portal() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'chat' | 'announcements'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'chat' | 'announcements' | 'content'>('dashboard');
+  const [isAddingAnn, setIsAddingAnn] = useState(false);
+  const [annForm, setAnnForm] = useState({ title: '', content: '', type: 'notice' as Announcement['type'] });
+
+  const createAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!annForm.title || !annForm.content) return;
+    try {
+      await addDoc(collection(db, 'announcements'), {
+        ...annForm,
+        date: serverTimestamp()
+      });
+      setAnnForm({ title: '', content: '', type: 'notice' });
+      setIsAddingAnn(false);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'announcements');
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login');
     }
   }, [user, authLoading, navigate]);
+
+  // Redirect if not admin/staff/guest (Full function admin portal)
+  useEffect(() => {
+    if (!authLoading && profile) {
+      const allowedRoles = ['admin', 'staff', 'guest'];
+      if (!allowedRoles.includes(profile.role) && user?.email !== 'mk.rabbani.cse@gmail.com') {
+        navigate('/');
+      }
+    }
+  }, [profile, authLoading, user, navigate]);
 
   useEffect(() => {
     if (!user) return;
@@ -38,7 +66,7 @@ export default function Portal() {
     const unsubChat = onSnapshot(chatQuery, (snap) => {
       const msgs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChatMessage)).reverse();
       setMessages(msgs);
-    }, (error) => console.error("Chat error:", error));
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'chats/general/messages'));
 
     // Announcements listener
     const annQuery = query(
@@ -50,19 +78,35 @@ export default function Portal() {
     const unsubAnn = onSnapshot(annQuery, (snap) => {
       const anns = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Announcement));
       setAnnouncements(anns);
-    });
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'announcements'));
+
+    // Faculty count listener
+    const unsubFaculty = onSnapshot(collection(db, 'faculty'), (snap) => {
+      setFacultyCount(snap.size);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'faculty'));
+
+    // Research count listener
+    const unsubResearch = onSnapshot(collection(db, 'research'), (snap) => {
+      setResearchCount(snap.size);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'research'));
 
     return () => {
       unsubChat();
       unsubAnn();
+      unsubFaculty();
+      unsubResearch();
     };
   }, [user]);
+
+  const [facultyCount, setFacultyCount] = useState(0);
+  const [researchCount, setResearchCount] = useState(0);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !user) return;
 
     try {
+      const path = 'chats/general/messages';
       await addDoc(collection(db, 'chats', 'general', 'messages'), {
         senderId: user.uid,
         senderName: profile?.displayName || user.email?.split('@')[0],
@@ -72,7 +116,7 @@ export default function Portal() {
       });
       setNewMessage('');
     } catch (err) {
-      console.error("Error sending message:", err);
+      handleFirestoreError(err, OperationType.WRITE, 'chats/general/messages');
     }
   };
 
@@ -92,9 +136,10 @@ export default function Portal() {
 
           <nav className="space-y-1">
             {[
-              { id: 'dashboard', icon: BarChart3, label: 'Dashboard' },
-              { id: 'chat', icon: MessageSquare, label: 'Community Chat' },
-              { id: 'announcements', icon: Bell, label: 'Announcements' },
+              { id: 'dashboard', icon: BarChart3, label: 'Analytics' },
+              { id: 'content', icon: Database, label: 'Content Manager' },
+              { id: 'announcements', icon: Bell, label: 'Notice Board' },
+              { id: 'chat', icon: MessageSquare, label: 'Staff Hub' },
             ].map(item => (
               <button
                 key={item.id}
@@ -126,8 +171,8 @@ export default function Portal() {
         </div>
 
         <div className="bg-indigo-600/10 rounded-2xl p-4 border border-indigo-500/20">
-           <div className="text-xs font-bold text-indigo-400 mb-1">Current Role</div>
-           <div className="text-sm text-white font-bold capitalize">{profile?.role || 'Student'}</div>
+           <div className="text-xs font-bold text-indigo-400 mb-1">Access Level</div>
+           <div className="text-sm text-white font-bold capitalize">{profile?.role === 'admin' || user?.email === 'mk.rabbani.cse@gmail.com' ? 'Super Admin' : profile?.role || 'Guest'}</div>
         </div>
       </aside>
 
@@ -140,19 +185,21 @@ export default function Portal() {
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} key="dash" className="space-y-8">
                 <header className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <h2 className="text-2xl font-bold text-gray-900">Hello, {profile?.displayName || user?.email?.split('@')[0]}</h2>
-                    <p className="text-gray-400 text-sm">Here's a quick look at your academic status.</p>
+                    <h2 className="text-2xl font-bold text-gray-900 uppercase tracking-tighter">System Overview</h2>
+                    <p className="text-gray-400 text-sm">Welcome to the Administration Hub. Monitoring live services.</p>
                   </div>
                   <div className="flex gap-2">
-                    <button className="p-2 rounded-lg bg-gray-50 text-gray-400 hover:text-indigo-600 border border-gray-100"><Settings className="w-5 h-5" /></button>
+                    <button className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all">
+                      <FilePlus className="w-4 h-4" /> Quick Publish
+                    </button>
                   </div>
                 </header>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                    {[
-                     { label: 'Attendance', value: '88%', sub: '+2% from last week', icon: Clock, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                     { label: 'GPA', value: '3.8/4.0', sub: 'Top 5% of class', icon: GraduationCap, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                     { label: 'Completed Credits', value: '42/120', sub: 'Next: Clinical Rotation', icon: BookOpen, color: 'text-amber-600', bg: 'bg-amber-50' },
+                     { label: 'Published Research', value: researchCount, sub: 'Active in Repository', icon: BookOpen, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                     { label: 'Active Faculty', value: facultyCount, sub: 'Verified Members', icon: Users2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                     { label: 'System Notices', value: announcements.length, sub: 'Live Announcements', icon: Bell, color: 'text-amber-600', bg: 'bg-amber-50' },
                    ].map(stat => (
                      <div key={stat.label} className="p-6 rounded-3xl border border-gray-100 bg-white shadow-sm space-y-4 hover:shadow-md transition-shadow">
                         <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", stat.bg)}>
@@ -168,11 +215,11 @@ export default function Portal() {
                 </div>
 
                 <div className="grid lg:grid-cols-2 gap-8">
-                  {/* Latest Announcements */}
+                  {/* Latest Announcements Control */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-gray-900">Recent Announcements</h3>
-                      <button className="text-indigo-600 text-xs font-bold hover:underline">View All</button>
+                      <h3 className="font-bold text-gray-900">Notice Board Operations</h3>
+                      <button onClick={() => setActiveTab('announcements')} className="text-indigo-600 text-xs font-bold hover:underline">Manage All</button>
                     </div>
                     <div className="space-y-3">
                       {announcements.length > 0 ? announcements.map(ann => (
@@ -182,47 +229,89 @@ export default function Portal() {
                            </div>
                            <div className="min-w-0 flex-grow">
                              <h4 className="font-bold text-sm text-gray-900 truncate">{ann.title}</h4>
-                             <p className="text-xs text-gray-500 line-clamp-1">{ann.content}</p>
+                             <p className="text-xs text-gray-500 line-clamp-1">{ann.type} • {ann.date?.toDate ? new Date(ann.date.toDate()).toLocaleDateString() : 'Today'}</p>
                            </div>
-                           <ChevronRight className="w-4 h-4 text-gray-300 self-center" />
+                           <button className="text-[10px] font-black text-indigo-600 uppercase bg-white border border-gray-100 px-3 py-1 rounded-lg hover:bg-indigo-50 transition-colors">Edit</button>
                         </div>
                       )) : (
                         <div className="p-4 rounded-xl bg-gray-50 border border-dashed border-gray-200 text-center text-xs text-gray-400">
-                           No new announcements
+                           No active notices
                         </div>
                       )}
                     </div>
                   </div>
 
-                  {/* Upcoming Schedule */}
+                  {/* System Health / Recent Activity */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-gray-900">Academic Calendar</h3>
-                      <button className="text-gray-400 hover:text-gray-600 transition-colors"><Calendar className="w-4 h-4" /></button>
+                      <h3 className="font-bold text-gray-900">System Activity</h3>
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-500 uppercase">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Live
+                      </div>
                     </div>
                     <div className="space-y-3">
                       {[
-                        { time: '09:00 AM', title: 'Anatomy Lecture', room: 'Hall B', color: 'bg-indigo-500' },
-                        { time: '11:15 AM', title: 'Lab: Micro-biology', room: 'Lab 4', color: 'bg-emerald-500' },
-                        { time: '02:00 PM', title: 'Clinical Ethics', room: 'Seminar Room', color: 'bg-amber-500' }
+                        { time: '2 mins ago', title: 'New Research Paper', desc: 'Added to Repository', icon: BookOpen, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                        { time: '1 hour ago', title: 'Faculty Profile Update', desc: 'Internal Medicine Dept', icon: Users2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                        { time: '3 hours ago', title: 'System Security Audit', desc: 'Rules deployed successfully', icon: Database, color: 'text-slate-600', bg: 'bg-slate-50' }
                       ].map(item => (
                         <div key={item.title} className="flex items-center gap-4 group">
-                           <div className="text-[10px] font-bold text-gray-400 w-16 uppercase tracking-tighter">{item.time}</div>
+                           <div className="text-[9px] font-bold text-gray-400 w-16 uppercase tracking-tighter">{item.time}</div>
                            <div className="flex-grow p-4 rounded-2xl bg-white border border-gray-100 shadow-sm flex items-center justify-between group-hover:border-indigo-100 transition-all">
                               <div className="flex items-center gap-3">
-                                <div className={cn("w-1.5 h-6 rounded-full", item.color)} />
+                                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", item.bg)}>
+                                  <item.icon className={cn("w-5 h-5", item.color)} />
+                                </div>
                                 <div className="space-y-0.5">
                                   <div className="text-sm font-bold text-gray-900">{item.title}</div>
-                                  <div className="text-[10px] text-gray-500">{item.room}</div>
+                                  <div className="text-[10px] text-gray-500">{item.desc}</div>
                                 </div>
                               </div>
-                              <ExternalLink className="w-3 h-3 text-gray-300 group-hover:text-indigo-400 transition-colors" />
                            </div>
                         </div>
                       ))}
                     </div>
                   </div>
                 </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'content' && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} key="content" className="space-y-8">
+                 <header className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">Content Manager</h2>
+                      <p className="text-gray-400 text-sm">Direct database access for institutional resources.</p>
+                    </div>
+                 </header>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {[
+                      { title: 'Research Repository', desc: 'Manage publications, trials and MEU/RMC activities.', count: `${researchCount} Records`, icon: BookOpen, action: '/research' },
+                      { title: 'Faculty Directory', desc: 'Update staff profiles, departments and designations.', count: `${facultyCount} Profiles`, icon: Users2, action: '/faculty' },
+                      { title: 'Notice Board', desc: 'Publish circulars, deadlines and event alerts.', count: `${announcements.length} Active`, icon: Bell, action: '#' },
+                      { title: 'Department Hub', desc: 'Edit department overview, services and faculty list.', count: '12 Areas', icon: Database, action: '/departments' }
+                    ].map(card => (
+                      <div key={card.title} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all group flex flex-col justify-between">
+                        <div className="space-y-6">
+                           <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-inner">
+                              <card.icon className="w-7 h-7" />
+                           </div>
+                           <div className="space-y-2">
+                              <h3 className="text-2xl font-black text-gray-900 tracking-tighter">{card.title}</h3>
+                              <p className="text-gray-500 font-light text-sm leading-relaxed">{card.desc}</p>
+                           </div>
+                        </div>
+                        <div className="mt-8 pt-6 border-t border-gray-50 flex items-center justify-between">
+                           <div className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{card.count}</div>
+                           <button onClick={() => card.action !== '#' && navigate(card.action)} className="flex items-center gap-2 text-indigo-600 font-bold text-xs group-hover:gap-3 transition-all">
+                              Manage <ChevronRight className="w-4 h-4" />
+                           </button>
+                        </div>
+                      </div>
+                    ))}
+                 </div>
               </motion.div>
             )}
 
@@ -284,15 +373,70 @@ export default function Portal() {
             
             {activeTab === 'announcements' && (
               <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} key="ann" className="space-y-8">
-                 <header className="flex items-center justify-between">
+                  <header className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900">Official Board</h2>
+                      <h2 className="text-2xl font-bold text-gray-900 balance-text">Official Board</h2>
                       <p className="text-gray-400 text-sm">Stay updated with critical circulars and news.</p>
                     </div>
-                    <button className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-sm">
+                    <button 
+                      onClick={() => setIsAddingAnn(true)}
+                      className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-sm"
+                    >
                       <Plus className="w-4 h-4" /> Create Circular
                     </button>
-                 </header>
+                  </header>
+                  
+                  <AnimatePresence>
+                    {isAddingAnn && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="bg-indigo-50 border border-indigo-100 rounded-3xl p-6 overflow-hidden"
+                      >
+                        <form onSubmit={createAnnouncement} className="space-y-4">
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-1">
+                                 <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest ml-1">Title</label>
+                                 <input 
+                                   required
+                                   value={annForm.title}
+                                   onChange={e => setAnnForm({...annForm, title: e.target.value})}
+                                   className="w-full bg-white border border-indigo-100 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200"
+                                   placeholder="Official Holiday Notice"
+                                 />
+                              </div>
+                              <div className="space-y-1">
+                                 <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest ml-1">Type</label>
+                                 <select 
+                                   value={annForm.type}
+                                   onChange={e => setAnnForm({...annForm, type: e.target.value as any})}
+                                   className="w-full bg-white border border-indigo-100 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200"
+                                 >
+                                    <option value="notice">Circular / Notice</option>
+                                    <option value="deadline">Critical Deadline</option>
+                                    <option value="event">Event Alert</option>
+                                 </select>
+                              </div>
+                           </div>
+                           <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest ml-1">Content</label>
+                              <textarea 
+                                required
+                                value={annForm.content}
+                                onChange={e => setAnnForm({...annForm, content: e.target.value})}
+                                className="w-full bg-white border border-indigo-100 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 min-h-[100px]"
+                                placeholder="Enter disclosure text..."
+                              />
+                           </div>
+                           <div className="flex justify-end gap-3">
+                              <button type="button" onClick={() => setIsAddingAnn(false)} className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-gray-600">Cancel</button>
+                              <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all">Publish Now</button>
+                           </div>
+                        </form>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                  
                  <div className="space-y-4">
                    {announcements.map(ann => (

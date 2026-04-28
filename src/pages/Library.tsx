@@ -5,10 +5,12 @@ import {
   LayoutGrid, List, FileSearch, Pin, Filter
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/utils';
 import { LIBRARY_DATA, LibraryItem } from '../data/library';
 
 export default function Library() {
+  const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
@@ -32,7 +34,7 @@ export default function Library() {
     if (book.type === 'Electronic') {
       window.open('#', '_blank');
     } else {
-      alert(`Request logged for: ${book.title}. Reference: ${book.code}`);
+      alert(`${t('library.requestLogged')}: ${book.title}. Reference: ${book.code}`);
     }
   };
 
@@ -62,10 +64,10 @@ export default function Library() {
              <div className="space-y-4">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">
                    <Database className="w-3 h-3" />
-                   <span className="text-[10px] font-bold uppercase tracking-widest leading-none">Resource Terminal: GMC-LIB-04</span>
+                   <span className="text-[10px] font-bold uppercase tracking-widest leading-none">{t('library.libTerminal')}</span>
                 </div>
-                <h1 className="text-6xl font-black tracking-tighter text-gray-900 uppercase leading-[0.8]">Digital <span className="text-indigo-600">Library</span></h1>
-                <p className="text-gray-400 font-medium max-w-xl">Access our centralized medical repository featuring over 30,000 physical and digital scholarly assets.</p>
+                <h1 className="text-6xl font-black tracking-tighter text-gray-900 uppercase leading-[0.8]">{t('library.title')}</h1>
+                <p className="text-gray-400 font-medium max-w-xl">{t('library.description')}</p>
              </div>
 
              <div className="flex flex-col gap-4">
@@ -74,19 +76,19 @@ export default function Library() {
                     onClick={() => setActiveType('All')}
                     className={cn("px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", activeType === 'All' ? "bg-white text-indigo-600 shadow-sm" : "text-gray-400")}
                   >
-                    All
+                    {t('library.all')}
                   </button>
                   <button 
                     onClick={() => setActiveType('Physical')}
                     className={cn("px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", activeType === 'Physical' ? "bg-white text-indigo-600 shadow-sm" : "text-gray-400")}
                   >
-                    Physical
+                    {t('library.physical')}
                   </button>
                   <button 
                     onClick={() => setActiveType('Electronic')}
                     className={cn("px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", activeType === 'Electronic' ? "bg-white text-indigo-600 shadow-sm" : "text-gray-400")}
                   >
-                    Electronic
+                    {t('library.electronic')}
                   </button>
                </div>
                
@@ -110,15 +112,15 @@ export default function Library() {
           <section className="bg-slate-900 rounded-[3rem] p-12 md:p-20 text-white overflow-hidden relative shadow-2xl shadow-indigo-100">
              <div className="relative z-10 space-y-12">
                 <div className="max-w-xl space-y-4">
-                   <h2 className="text-5xl font-black tracking-tighter leading-[0.9] uppercase">Global Repository <span className="text-indigo-400">Search</span></h2>
-                   <p className="text-slate-400 text-lg font-light leading-relaxed">Instantly locate specialized clinical texts using the shelf-sync algorithm.</p>
+                   <h2 className="text-5xl font-black tracking-tighter leading-[0.9] uppercase">{t('library.repositorySearch')}</h2>
+                   <p className="text-slate-400 text-lg font-light leading-relaxed">{t('library.repositoryDesc')}</p>
                 </div>
                 
                 <div className="relative max-w-4xl group">
                    <Search className="absolute left-8 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
                    <input 
                     type="text" 
-                    placeholder="Reference code, Title or Scholar name..." 
+                    placeholder={t('library.search')} 
                     className="w-full pl-20 pr-10 py-10 bg-white/5 border border-white/10 rounded-[3rem] outline-none text-2xl font-light focus:bg-white/10 focus:border-white/20 transition-all backdrop-blur-md"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -168,7 +170,7 @@ export default function Library() {
                              "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest",
                              book.type === 'Electronic' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-indigo-50 text-indigo-600 border border-indigo-100"
                           )}>
-                             {book.type}
+                             {book.type === 'Electronic' ? t('library.electronic') : t('library.physical')}
                           </div>
                           <Pin className="w-5 h-5 text-gray-50 group-hover:text-indigo-200 transition-colors" />
                        </div>
@@ -180,7 +182,7 @@ export default function Library() {
                           )}>
                             {book.title}
                           </h3>
-                          <div className="flex items-center gap-2 text-xs font-medium text-gray-400 italic">By {book.author}</div>
+                          <div className="flex items-center gap-2 text-xs font-medium text-gray-400 italic">{t('library.by')} {book.author}</div>
                        </div>
 
                        <div className="flex flex-wrap gap-2">
@@ -201,7 +203,7 @@ export default function Library() {
                         onClick={() => handleAction(book)}
                         className="text-indigo-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-3 group/btn"
                        >
-                          {book.type === 'Electronic' ? 'Open Resource' : 'Log Request'}
+                          {book.type === 'Electronic' ? t('library.open') : t('library.request')}
                           <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-2 transition-transform" />
                        </button>
                     </div>
@@ -214,12 +216,12 @@ export default function Library() {
                     className="col-span-full py-20 text-center space-y-4"
                   >
                     <FileSearch className="w-16 h-16 text-gray-200 mx-auto" />
-                    <p className="text-gray-400 font-medium italic">No matches found for your search criteria.</p>
+                    <p className="text-gray-400 font-medium italic">{t('library.noResults')}</p>
                     <button 
                       onClick={() => { setSearchQuery(''); setActiveCategory('All'); setActiveType('All'); }}
                       className="text-indigo-600 text-xs font-bold uppercase tracking-widest hover:underline"
                     >
-                      Clear all filters
+                      {t('library.clearFilters')}
                     </button>
                   </motion.div>
                 )}
@@ -228,31 +230,31 @@ export default function Library() {
 
           <footer className="pt-20 border-t border-gray-100 grid grid-cols-2 md:grid-cols-4 gap-12">
              <div className="space-y-6">
-                <div className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">Service Hours</div>
+                <div className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">{t('library.serviceHours')}</div>
                 <div className="space-y-4">
                    <div className="flex justify-between items-end border-b border-gray-50 pb-2">
-                      <span className="text-xs text-gray-400 font-medium">Standard Ops</span>
+                      <span className="text-xs text-gray-400 font-medium">{t('library.standardOps')}</span>
                       <span className="text-sm font-black text-gray-900 font-mono tracking-tighter">08:00 - 22:00</span>
                    </div>
                    <div className="flex justify-between items-end border-b border-gray-50 pb-2">
-                      <span className="text-xs text-gray-400 font-medium">Clinical Reserve</span>
-                      <span className="text-sm font-black text-gray-900 font-mono tracking-tighter">24/7 Digital</span>
+                      <span className="text-xs text-gray-400 font-medium">{t('library.clinicalReserve')}</span>
+                      <span className="text-sm font-black text-gray-900 font-mono tracking-tighter">{t('library.digitalOps')}</span>
                    </div>
                 </div>
              </div>
              <div className="space-y-6">
-                <div className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">Real-time Stats</div>
+                <div className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">{t('library.stats')}</div>
                 <div className="space-y-3">
-                   <div className="text-sm font-black text-gray-900 truncate tracking-tight">32,450 VOLUMES</div>
-                   <div className="text-sm font-black text-indigo-600 truncate tracking-tight">4,500 E-JOURNALS</div>
+                   <div className="text-sm font-black text-gray-900 truncate tracking-tight">32,450 {t('library.volumes')}</div>
+                   <div className="text-sm font-black text-indigo-600 truncate tracking-tight">4,500 {t('library.journals')}</div>
                 </div>
              </div>
              <div className="col-span-2 bg-[#fbfcff] border border-gray-100 p-10 rounded-[2.5rem] flex items-center justify-between shadow-sm">
                 <div className="space-y-2">
-                   <div className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Library Support</div>
-                   <div className="text-xl font-black text-gray-900 tracking-tighter">Inter-Library Exchange</div>
+                   <div className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{t('library.support')}</div>
+                   <div className="text-xl font-black text-gray-900 tracking-tighter">{t('library.exchange')}</div>
                 </div>
-                <button className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest shadow-2xl shadow-indigo-100 hover:bg-indigo-600 transition-colors">Start Session</button>
+                <button className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest shadow-2xl shadow-indigo-100 hover:bg-indigo-600 transition-colors">{t('library.startSession')}</button>
              </div>
           </footer>
         </main>

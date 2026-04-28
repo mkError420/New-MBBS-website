@@ -32,10 +32,10 @@ export default function Home() {
   }, []);
 
   const stats = [
-    { label: 'Founded', value: '1985', icon: GraduationCap },
-    { label: 'Faculty Members', value: '250+', icon: BookOpen },
-    { label: 'Research Papers', value: '1,200+', icon: Microscope },
-    { label: 'Global Rank', value: '#12', icon: Award },
+    { label: t('home.stats.founded'), value: '1985', icon: GraduationCap },
+    { label: t('home.stats.faculty'), value: '250+', icon: BookOpen },
+    { label: t('home.stats.research'), value: '1,200+', icon: Microscope },
+    { label: t('home.stats.ranking'), value: '#12', icon: Award },
   ];
 
   const leadership = [
@@ -106,7 +106,7 @@ export default function Home() {
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-black/20 z-10" />
             <img 
               src={heroImages[currentHeroSlide]} 
-              alt={`GMC Excellence ${currentHeroSlide + 1}`} 
+              alt="Hero Banner" 
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"
             />
@@ -130,6 +130,39 @@ export default function Home() {
       </section>
 
       <NewsTicker />
+
+      {/* Hero Content Section */}
+      <section className="max-w-5xl mx-auto px-4 text-center space-y-8 pt-6">
+        <div className="space-y-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 mb-2"
+          >
+            <GraduationCap className="w-4 h-4" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{t('home.sections.academic')}</span>
+          </motion.div>
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-4xl md:text-7xl font-black text-slate-900 tracking-tighter leading-[0.9] uppercase"
+          >
+            {t('home.welcome')}
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="text-lg md:text-2xl text-slate-500 font-light max-w-3xl mx-auto leading-relaxed"
+          >
+            {t('home.description')}
+          </motion.p>
+        </div>
+        <div className="w-24 h-1.5 bg-indigo-600 mx-auto rounded-full" />
+      </section>
 
       {/* Main Content Layout with Sidebar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -165,7 +198,7 @@ export default function Home() {
                   </div>
                   <div className="flex-grow space-y-4 pt-4">
                     <div className="space-y-1">
-                      <span className="text-indigo-600 font-bold text-xs uppercase tracking-widest">{leader.role}'s Message</span>
+                      <span className="text-indigo-600 font-bold text-xs uppercase tracking-widest">{leader.role}{t('home.sections.messagePrefix')}</span>
                       <h2 className="text-3xl font-bold text-gray-900">{leader.name}</h2>
                     </div>
                     <div className="relative">
@@ -175,7 +208,7 @@ export default function Home() {
                       </p>
                     </div>
                     <button className="text-indigo-600 font-bold text-sm flex items-center gap-2 hover:gap-3 transition-all shrink-0">
-                      Read Full Bio <ArrowRight className="w-4 h-4" />
+                      {t('home.sections.readBio')} <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
                 </motion.section>
@@ -188,7 +221,7 @@ export default function Home() {
                 <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
                   <HelpCircle className="w-6 h-6" />
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Who we are?</h2>
+                <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{t('home.sections.who')}</h2>
               </div>
               <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm relative overflow-hidden group">
                 <div className="relative z-10 space-y-4">
@@ -216,7 +249,7 @@ export default function Home() {
                 <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
                   <Zap className="w-6 h-6" />
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 tracking-tight">What we provide?</h2>
+                <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{t('home.sections.what')}</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[
@@ -248,7 +281,7 @@ export default function Home() {
                 <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">
                   <Award className="w-6 h-6" />
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Why Choose US?</h2>
+                <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{t('home.sections.why')}</h2>
               </div>
               <div className="space-y-4">
                 {[
@@ -283,7 +316,7 @@ export default function Home() {
                 <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
                   <MessageCircle className="w-6 h-6" />
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Student Voices</h2>
+                <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{t('home.sections.voices')}</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {testimonials.map((t, i) => (
@@ -340,8 +373,8 @@ export default function Home() {
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </div>
                 <div className="relative z-10">
-                   <div className="text-xs opacity-60 uppercase tracking-widest mb-1 font-black">Academic</div>
-                   <div className="text-xl tracking-tight">Explore Departments</div>
+                   <div className="text-xs opacity-60 uppercase tracking-widest mb-1 font-black">{t('home.sections.academic')}</div>
+                   <div className="text-xl tracking-tight">{t('home.sections.explore')}</div>
                 </div>
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full translate-x-1/2 -translate-y-1/2 blur-2xl" />
               </Link>
@@ -357,8 +390,8 @@ export default function Home() {
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform text-white/50" />
                 </div>
                 <div className="relative z-10">
-                   <div className="text-xs opacity-40 uppercase tracking-widest mb-1 font-black">Interactive</div>
-                   <div className="text-xl tracking-tight">Virtual Campus Tour</div>
+                   <div className="text-xs opacity-40 uppercase tracking-widest mb-1 font-black">{t('home.sections.campus')}</div>
+                   <div className="text-xl tracking-tight">{t('home.tour')}</div>
                 </div>
                  <div className="absolute bottom-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full translate-x-1/3 translate-y-1/3 blur-xl" />
               </Link>
@@ -370,7 +403,7 @@ export default function Home() {
                 <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
                   <Bell className="w-5 h-5 text-white animate-ring" />
                 </div>
-                <h3 className="font-bold text-xl tracking-tight">Notice Board</h3>
+                <h3 className="font-bold text-xl tracking-tight">{t('home.sections.notices')}</h3>
               </div>
               <div className="space-y-4 relative z-10">
                 {notices.map((notice, idx) => {
@@ -391,7 +424,7 @@ export default function Home() {
                 })}
               </div>
               <Link to="/notice" className="mt-8 block text-center py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-indigo-600 transition-all relative z-10">
-                View All Notices
+                {t('home.sections.viewAllNotices')}
               </Link>
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/20 blur-[60px] rounded-full translate-x-1/2 -translate-y-1/2" />
             </div>
@@ -399,7 +432,7 @@ export default function Home() {
             {/* Leadership Portraits Widgets */}
             <div className="bg-white rounded-3xl border border-gray-100 p-6 space-y-6 shadow-sm">
                <h3 className="font-bold text-gray-900 uppercase tracking-widest text-[10px] border-l-4 border-indigo-600 pl-3">
-                 Institutional Heads
+                 {t('home.sections.heads')}
                </h3>
                <div className="space-y-4">
                  {leadership.map(leader => (
@@ -420,27 +453,27 @@ export default function Home() {
             <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
               <div className="p-6 space-y-6">
                 <h3 className="font-bold text-gray-900 uppercase tracking-widest text-[10px] border-l-4 border-indigo-600 pl-3">
-                  Visit Us
+                  {t('home.sections.visit')}
                 </h3>
                 <div className="space-y-4">
                   <div className="flex items-start gap-4">
                     <MapPin className="w-5 h-5 text-indigo-600 shrink-0" />
                     <div>
-                      <div className="text-xs font-bold text-gray-400 uppercase mb-1">Campus Location</div>
+                      <div className="text-xs font-bold text-gray-400 uppercase mb-1">{t('home.sections.location')}</div>
                       <p className="text-sm text-gray-700 leading-relaxed font-medium">123 Medical Drive, Health City, NY 10001, USA</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <Phone className="w-5 h-5 text-indigo-600 shrink-0" />
                     <div>
-                      <div className="text-xs font-bold text-gray-400 uppercase">Emergency Contact</div>
+                      <div className="text-xs font-bold text-gray-400 uppercase">{t('home.sections.emergency')}</div>
                       <p className="text-sm text-gray-900 font-bold">+1 (555) 911-0000</p>
                     </div>
                   </div>
                    <div className="flex items-center gap-4">
                     <Mail className="w-5 h-5 text-indigo-600 shrink-0" />
                     <div>
-                      <div className="text-xs font-bold text-gray-400 uppercase">General Inquiries</div>
+                      <div className="text-xs font-bold text-gray-400 uppercase">{t('home.sections.inquiries')}</div>
                       <p className="text-sm text-gray-900 font-bold">info@globalmed.edu</p>
                     </div>
                   </div>
@@ -459,7 +492,7 @@ export default function Home() {
                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-xl shadow-black/20">
                     <MapPin className="w-6 h-6 text-indigo-600" />
                   </div>
-                  <span className="mt-3 text-white font-bold text-xs uppercase tracking-widest shadow-sm">Find us on map</span>
+                  <span className="mt-3 text-white font-bold text-xs uppercase tracking-widest shadow-sm">{t('home.sections.findMap')}</span>
                   <ExternalLink className="absolute top-4 right-4 w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-all" />
                 </div>
               </div>
@@ -472,8 +505,8 @@ export default function Home() {
       {/* Campus Life Gallery */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="text-center space-y-2">
-          <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Campus Life</h2>
-          <p className="text-gray-500">Glimpses of vibrancy and excellence at Global Medical College.</p>
+          <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{t('home.sections.campusLife')}</h2>
+          <p className="text-gray-500">{t('home.description')}</p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {gallery.map((img, i) => (
@@ -491,8 +524,8 @@ export default function Home() {
       {/* FAQ Section */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="text-center space-y-2">
-          <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Common Questions</h2>
-          <p className="text-gray-500">Everything you need to know about joining GMC.</p>
+          <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{t('home.sections.questions')}</h2>
+          <p className="text-gray-500">{t('home.description')}</p>
         </div>
         <div className="space-y-3">
           {faqs.map((faq, i) => (

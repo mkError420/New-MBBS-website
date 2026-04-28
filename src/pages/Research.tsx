@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, getDocs, where, limit } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { ResearchPaper } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 import { 
   Search, FileText, Calendar, Tag, Filter,
   Users, Activity, ClipboardList, BookOpen, Layers,
-  ChevronRight, Award, Microscope
+  ChevronRight, Award, Microscope, Plus, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -13,10 +15,70 @@ import { cn } from '../lib/utils';
 type ActiveView = 'repository' | 'meu' | 'rmc';
 
 export default function Research() {
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'staff' || profile?.email === 'mk.rabbani.cse@gmail.com';
   const [activeView, setActiveView] = useState<ActiveView>('repository');
   const [papers, setPapers] = useState<ResearchPaper[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newPaper, setNewPaper] = useState({
+    title: '',
+    authors: '',
+    abstract: '',
+    journal: '',
+    tags: '',
+    publishedDate: new Date().toISOString().split('T')[0]
+  });
+
+  useEffect(() => {
+    const q = query(collection(db, 'research'), orderBy('publishedDate', 'desc'));
+    const unsub = onSnapshot(q, (snap) => {
+      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ResearchPaper));
+      if (data.length > 0) {
+        setPapers(data);
+      } else {
+        setPapers(mockPapers);
+      }
+      setLoading(false);
+    }, (err) => {
+      handleFirestoreError(err, OperationType.LIST, 'research');
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  const handleDeletePaper = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this publication?')) return;
+    try {
+      await deleteDoc(doc(db, 'research', id));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, 'research/' + id);
+    }
+  };
+
+  const handleAddPaper = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await addDoc(collection(db, 'research'), {
+        ...newPaper,
+        authors: newPaper.authors.split(',').map(a => a.trim()),
+        tags: newPaper.tags.split(',').map(t => t.trim()),
+        createdAt: serverTimestamp()
+      });
+      setShowAddForm(false);
+      setNewPaper({
+        title: '',
+        authors: '',
+        abstract: '',
+        journal: '',
+        tags: '',
+        publishedDate: new Date().toISOString().split('T')[0]
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'research');
+    }
+  };
 
   // MEU Data
   const meuData = {
@@ -78,12 +140,6 @@ export default function Research() {
     }
   ];
 
-  useEffect(() => {
-    setTimeout(() => {
-      setPapers(mockPapers);
-      setLoading(false);
-    }, 500);
-  }, []);
 
   const filteredPapers = papers.filter(p => 
     p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -109,28 +165,131 @@ export default function Research() {
           </p>
         </div>
 
-        <div className="flex bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
-          {[
-            { id: 'repository', label: 'Repository', icon: BookOpen },
-            { id: 'meu', label: 'MEU', icon: Users },
-            { id: 'rmc', label: 'RMC', icon: Microscope }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveView(tab.id as ActiveView)}
-              className={cn(
-                "flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all",
-                activeView === tab.id 
-                  ? "bg-white text-indigo-600 shadow-xl shadow-indigo-500/5" 
-                  : "text-gray-400 hover:text-gray-600 hover:bg-white/50"
-              )}
-            >
-              <tab.icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <div className="flex bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
+            {[
+              { id: 'repository', label: 'Repository', icon: BookOpen },
+              { id: 'meu', label: 'MEU', icon: Users },
+              { id: 'rmc', label: 'RMC', icon: Microscope }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveView(tab.id as ActiveView)}
+                className={cn(
+                  "flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all",
+                  activeView === tab.id 
+                    ? "bg-white text-indigo-600 shadow-xl shadow-indigo-500/5" 
+                    : "text-gray-400 hover:text-gray-600 hover:bg-white/50"
+                )}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          
+          {isAdmin && activeView === 'repository' && (
+             <button 
+               onClick={() => setShowAddForm(true)}
+               className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
+             >
+               <Plus className="w-4 h-4" /> Add Paper
+             </button>
+          )}
         </div>
       </div>
+
+      <AnimatePresence>
+        {showAddForm && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="p-8 bg-gray-50 border border-indigo-100 rounded-[2.5rem] relative overflow-hidden"
+          >
+             <button onClick={() => setShowAddForm(false)} className="absolute top-6 right-6 p-2 rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-red-500 transition-colors">
+               <X className="w-5 h-5" />
+             </button>
+             
+             <form onSubmit={handleAddPaper} className="space-y-6 max-w-4xl">
+                <div className="space-y-2">
+                   <h2 className="text-2xl font-black text-gray-900 tracking-tight">New Publication Entry</h2>
+                   <p className="text-gray-400 text-sm">Add a peer-reviewed research paper to the institutional repository.</p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-indigo-400 uppercase ml-1">Research Title</label>
+                      <input 
+                        required
+                        className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-3 text-sm focus:ring-2 focus:ring-indigo-200 outline-none"
+                        placeholder="Advancements in Medical AI..."
+                        value={newPaper.title}
+                        onChange={e => setNewPaper({...newPaper, title: e.target.value})}
+                      />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-indigo-400 uppercase ml-1">Authors (Comma separated)</label>
+                      <input 
+                        required
+                        className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-3 text-sm focus:ring-2 focus:ring-indigo-200 outline-none"
+                        placeholder="Dr. Sarah, Dr. John..."
+                        value={newPaper.authors}
+                        onChange={e => setNewPaper({...newPaper, authors: e.target.value})}
+                      />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-indigo-400 uppercase ml-1">Journal Name</label>
+                      <input 
+                        required
+                        className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-3 text-sm focus:ring-2 focus:ring-indigo-200 outline-none"
+                        placeholder="International Journal of Medicine"
+                        value={newPaper.journal}
+                        onChange={e => setNewPaper({...newPaper, journal: e.target.value})}
+                      />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-indigo-400 uppercase ml-1">Publication Date</label>
+                      <input 
+                        type="date"
+                        required
+                        className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-3 text-sm focus:ring-2 focus:ring-indigo-200 outline-none"
+                        value={newPaper.publishedDate}
+                        onChange={e => setNewPaper({...newPaper, publishedDate: e.target.value})}
+                      />
+                   </div>
+                </div>
+
+                <div className="space-y-2">
+                   <label className="text-[10px] font-bold text-indigo-400 uppercase ml-1">Abstract Summary</label>
+                   <textarea 
+                     required
+                     className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-3 text-sm focus:ring-2 focus:ring-indigo-200 outline-none min-h-[120px]"
+                     placeholder="A brief summary of the research methodology and findings..."
+                     value={newPaper.abstract}
+                     onChange={e => setNewPaper({...newPaper, abstract: e.target.value})}
+                   />
+                </div>
+
+                <div className="space-y-2">
+                   <label className="text-[10px] font-bold text-indigo-400 uppercase ml-1">Tags (Comma separated)</label>
+                   <input 
+                     className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-3 text-sm focus:ring-2 focus:ring-indigo-200 outline-none"
+                     placeholder="Genetics, AI, clinical trial..."
+                     value={newPaper.tags}
+                     onChange={e => setNewPaper({...newPaper, tags: e.target.value})}
+                   />
+                </div>
+
+                <div className="flex justify-end pt-4">
+                   <button type="submit" className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200">
+                     Publish Research
+                   </button>
+                </div>
+             </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence mode="wait">
         {activeView === 'repository' ? (
@@ -204,9 +363,23 @@ export default function Research() {
                              <div className="text-[10px] uppercase tracking-widest font-black text-gray-300">Principal Authors</div>
                              <div className="text-gray-900 font-black">{p.authors.join(' • ')}</div>
                           </div>
-                          <button className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-bold text-xs hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200">
-                            View Publication
-                          </button>
+                          <div className="flex items-center gap-3">
+                            <button className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-bold text-xs hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200">
+                              View Publication
+                            </button>
+                            {isAdmin && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeletePaper(p.id);
+                                }}
+                                className="p-3 rounded-2xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-sm border border-red-100"
+                                title="Delete Publication"
+                              >
+                                <X className="w-5 h-5" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </motion.div>

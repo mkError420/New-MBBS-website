@@ -23,9 +23,16 @@ export default function Navbar() {
     { id: 'notice', name: t('nav.notice'), path: '/notice', icon: Bell },
   ];
 
-  const toggleLanguage = () => {
-    i18n.changeLanguage(i18n.language === 'en' ? 'es' : 'en');
-  };
+  const languages = [
+    { code: 'en', name: 'English' },
+    { code: 'ne', name: 'नेपाली' },
+    { code: 'dz', name: 'རྫོང་ཁ་' },
+    { code: 'hi', name: 'हिन्दी' },
+    { code: 'bn', name: 'বাংলা' },
+    { code: 'dv', name: 'ދިވެހި' }
+  ];
+
+  const [showLangDropdown, setShowLangDropdown] = React.useState(false);
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
@@ -36,18 +43,18 @@ export default function Navbar() {
               G
             </div>
             <span className="font-bold text-xl tracking-tight text-gray-900 hidden sm:block">
-              Global Medical College
+              {t('nav.collegeName')}
             </span>
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden lg:flex items-center space-x-2 xl:space-x-4">
             {navItems.map((item) => (
               <Link
                 key={item.id}
                 to={item.path}
                 className={cn(
-                  "px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-indigo-600",
+                  "px-2 xl:px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-indigo-600 whitespace-nowrap",
                   location.pathname === item.path && item.id !== 'notice' ? "text-indigo-600 bg-indigo-50/50" : "text-gray-600"
                 )}
               >
@@ -55,29 +62,104 @@ export default function Navbar() {
               </Link>
             ))}
             
-            <button
-              onClick={toggleLanguage}
-              className="p-2 text-gray-600 hover:text-indigo-600 transition-colors flex items-center gap-1"
-            >
-              <Globe className="w-4 h-4" />
-              <span className="text-xs font-bold uppercase">{i18n.language}</span>
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowLangDropdown(!showLangDropdown)}
+                className="p-2 text-gray-600 hover:text-indigo-600 transition-colors flex items-center gap-1 border border-gray-100 rounded-lg bg-gray-50/50"
+              >
+                <Globe className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase">{i18n.language}</span>
+              </button>
+
+              <AnimatePresence>
+                {showLangDropdown && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={() => setShowLangDropdown(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-20 py-1"
+                    >
+                      {languages.map((lang) => (
+                        <button
+                          key={lang.code}
+                          onClick={() => {
+                            i18n.changeLanguage(lang.code);
+                            setShowLangDropdown(false);
+                          }}
+                          className={cn(
+                            "w-full text-left px-4 py-2 text-xs font-bold transition-colors hover:bg-indigo-50",
+                            i18n.language === lang.code ? "text-indigo-600 bg-indigo-50/50" : "text-gray-600"
+                          )}
+                        >
+                          {lang.name}
+                        </button>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
 
             {user && (
-              <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
-                {profile?.displayName?.[0] || user.email?.[0]?.toUpperCase()}
+              <div className="flex items-center gap-3">
+                <Link 
+                  to="/portal" 
+                  className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
+                >
+                  Portal
+                </Link>
+                <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
+                  {profile?.displayName?.[0] || user.email?.[0]?.toUpperCase()}
+                </div>
               </div>
             )}
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center space-x-2">
-            <button
-               onClick={toggleLanguage}
-               className="p-2 text-gray-600"
-            >
-              <Globe className="w-5 h-5" />
-            </button>
+          <div className="lg:hidden flex items-center space-x-2">
+            <div className="relative">
+              <button
+                onClick={() => setShowLangDropdown(!showLangDropdown)}
+                className="p-2 text-gray-600"
+              >
+                <Globe className="w-5 h-5" />
+              </button>
+              
+              <AnimatePresence>
+                {showLangDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowLangDropdown(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-2xl border border-gray-100 z-20 py-1"
+                    >
+                      {languages.map((lang) => (
+                        <button
+                          key={lang.code}
+                          onClick={() => {
+                            i18n.changeLanguage(lang.code);
+                            setShowLangDropdown(false);
+                          }}
+                          className={cn(
+                            "w-full text-left px-4 py-2 text-xs font-bold",
+                            i18n.language === lang.code ? "text-indigo-600" : "text-gray-600"
+                          )}
+                        >
+                          {lang.name}
+                        </button>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="p-2 text-gray-600"
@@ -95,7 +177,7 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white border-b border-gray-100"
+            className="lg:hidden bg-white border-b border-gray-100"
           >
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
               {navItems.map((item) => (
@@ -109,7 +191,25 @@ export default function Navbar() {
                   <span>{item.name}</span>
                 </Link>
               ))}
-
+              {user ? (
+                <Link
+                  to="/portal"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center space-x-3 px-3 py-3 rounded-md text-base font-bold text-indigo-600 hover:bg-indigo-50"
+                >
+                  <GraduationCap className="w-5 h-5" />
+                  <span>Admin Portal</span>
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center space-x-3 px-3 py-3 rounded-md text-base font-bold text-indigo-600 hover:bg-indigo-50"
+                >
+                  <LogIn className="w-5 h-5" />
+                  <span>Login</span>
+                </Link>
+              )}
             </div>
           </motion.div>
         )}

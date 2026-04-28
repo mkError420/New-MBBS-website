@@ -3,21 +3,12 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Default deny: Block all read/write at the root
     match /{document=**} {
-      allow read, write: if isSignedIn() && request.auth.token.email == 'mk.rabbani.cse@gmail.com';
       allow read, write: if false;
     }
 
     // Helper functions
     function isSignedIn() { 
       return request.auth != null; 
-    }
-    
-    function isEmailVerified() {
-      return isSignedIn() && request.auth.token.email_verified == true;
-    }
-    
-    function isSuperAdmin() {
-      return isSignedIn() && request.auth.token.email == 'mk.rabbani.cse@gmail.com';
     }
     
     function isOwner(userId) { 
@@ -29,11 +20,13 @@ service cloud.firestore {
     }
 
     function isAdmin() { 
-      return isSuperAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'admin');
+      let data = getUserData();
+      return isSignedIn() && data != null && data.role == 'admin'; 
     }
 
     function isStaff() { 
-      return isSuperAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (getUserData().role == 'staff' || getUserData().role == 'admin'));
+      let data = getUserData();
+      return isSignedIn() && data != null && (data.role == 'staff' || data.role == 'admin'); 
     }
     
     function isValidId(id) { 
@@ -50,53 +43,58 @@ service cloud.firestore {
 
     // User profiles
     match /users/{userId} {
-      allow get: if isOwner(userId) || isStaff() || isSuperAdmin();
-      allow list: if isStaff() || isSuperAdmin();
+      // Allow user to read their own profile, and staff/admins to read any profile
+      allow read: if isOwner(userId) || isStaff();
       
+      // Allow registration: user can create their own profile as 'student'
       allow create: if isOwner(userId) 
-        && isValidId(userId)
-        && (incoming().role == 'guest' || isSuperAdmin())
-        && incoming().uid == userId;
+        && incoming().role == 'student'
+        && incoming().uid == userId
+        && incoming().keys().hasAll(['uid', 'email', 'role'])
+        && incoming().keys().size() >= 3;
         
-      allow update: if isSuperAdmin() || (isOwner(userId) 
+      // Allow updates to own profile, but NOT to role (only staff/admins can change roles)
+      allow update: if isOwner(userId) 
         && incoming().role == existing().role
-        && incoming().uid == existing().uid);
+        && incoming().uid == existing().uid;
         
-      allow delete: if isSuperAdmin();
+      // Admins can update anything
+      allow update: if isAdmin();
+      
+      allow delete: if isAdmin();
     }
 
     // Faculty (Public read)
     match /faculty/{facultyId} {
       allow read: if true;
-      allow write: if isStaff() && isValidId(facultyId);
+      allow write: if isStaff();
     }
 
     // Courses (Public read)
     match /courses/{courseId} {
       allow read: if true;
-      allow write: if isStaff() && isValidId(courseId);
+      allow write: if isStaff();
     }
 
     // Research (Public read)
     match /research/{paperId} {
       allow read: if true;
-      allow write: if isStaff() && isValidId(paperId);
+      allow write: if isStaff();
     }
 
     // Announcements
     match /announcements/{annId} {
       allow read: if true;
-      allow write: if isStaff() && isValidId(annId);
+      allow write: if isStaff();
     }
 
     // Chats
     match /chats/{roomId} {
-      allow read: if isSignedIn() && isValidId(roomId);
+      allow read: if isSignedIn();
       
       match /messages/{msgId} {
         allow read: if isSignedIn();
         allow create: if isSignedIn() 
-          && isValidId(msgId)
           && incoming().senderId == request.auth.uid
           && incoming().text is string 
           && incoming().text.size() <= 1000;
