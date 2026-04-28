@@ -2,7 +2,6 @@ export interface UserProfile {
   uid: string;
   email: string | null;
   displayName: string | null;
-  role: 'student' | 'staff' | 'admin';
   profileImageUrl?: string;
   department?: string;
 }
@@ -40,7 +39,6 @@ export interface Announcement {
   id: string;
   title: string;
   content: string;
-  type: 'news' | 'event' | 'deadline';
+  type: 'notice' | 'event' | 'deadline';
   date: any;
-  recipients: 'all' | 'student' | 'staff';
 }

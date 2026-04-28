@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../lib/firebase';
-import { collection, query, onSnapshot, orderBy, limit, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, limit, addDoc, serverTimestamp, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import { ChatMessage, Announcement } from '../types';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 import { 
   BarChart3, MessageSquare, Bell, Calendar, User, Settings, LogOut, 
-  Send, Plus, Clock, ExternalLink, ChevronRight, GraduationCap, BookOpen, Database, FilePlus, Users2
+  Send, Plus, Clock, ExternalLink, ChevronRight, GraduationCap, BookOpen, Database, FilePlus, Users2, Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -18,7 +18,7 @@ export default function Portal() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'chat' | 'announcements' | 'content'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'chat' | 'announcements' | 'content' | 'settings'>('dashboard');
   const [isAddingAnn, setIsAddingAnn] = useState(false);
   const [annForm, setAnnForm] = useState({ title: '', content: '', type: 'notice' as Announcement['type'] });
 
@@ -37,21 +37,29 @@ export default function Portal() {
     }
   };
 
+  const deleteAnnouncement = async (id: string) => {
+    if (!window.confirm('Delete this announcement forever?')) return;
+    try {
+      await deleteDoc(doc(db, 'announcements', id));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, 'announcements/' + id);
+    }
+  };
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login');
     }
   }, [user, authLoading, navigate]);
 
-  // Redirect if not admin/staff/guest (Full function admin portal)
+  // Redirect if not admin (mk.rabbani.cse@gmail.com)
   useEffect(() => {
-    if (!authLoading && profile) {
-      const allowedRoles = ['admin', 'staff', 'guest'];
-      if (!allowedRoles.includes(profile.role) && user?.email !== 'mk.rabbani.cse@gmail.com') {
+    if (!authLoading) {
+      if (user && user.email !== 'mk.rabbani.cse@gmail.com') {
         navigate('/');
       }
     }
-  }, [profile, authLoading, user, navigate]);
+  }, [authLoading, user, navigate]);
 
   useEffect(() => {
     if (!user) return;
@@ -90,16 +98,31 @@ export default function Portal() {
       setResearchCount(snap.size);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'research'));
 
+    // Recent activity listener (mocking with latest records)
+    const unsubActivity = onSnapshot(query(collection(db, 'announcements'), orderBy('date', 'desc'), limit(3)), (snap) => {
+      const activities = snap.docs.map(doc => ({
+        time: 'Recent',
+        title: 'New Announcement',
+        desc: doc.data().title,
+        icon: Bell,
+        color: 'text-amber-600',
+        bg: 'bg-amber-50'
+      }));
+      setRecentActivity(activities);
+    });
+
     return () => {
       unsubChat();
       unsubAnn();
       unsubFaculty();
       unsubResearch();
+      unsubActivity();
     };
   }, [user]);
 
   const [facultyCount, setFacultyCount] = useState(0);
   const [researchCount, setResearchCount] = useState(0);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,6 +163,7 @@ export default function Portal() {
               { id: 'content', icon: Database, label: 'Content Manager' },
               { id: 'announcements', icon: Bell, label: 'Notice Board' },
               { id: 'chat', icon: MessageSquare, label: 'Staff Hub' },
+              { id: 'settings', icon: Settings, label: 'System Settings' },
             ].map(item => (
               <button
                 key={item.id}
@@ -172,7 +196,7 @@ export default function Portal() {
 
         <div className="bg-indigo-600/10 rounded-2xl p-4 border border-indigo-500/20">
            <div className="text-xs font-bold text-indigo-400 mb-1">Access Level</div>
-           <div className="text-sm text-white font-bold capitalize">{profile?.role === 'admin' || user?.email === 'mk.rabbani.cse@gmail.com' ? 'Super Admin' : profile?.role || 'Guest'}</div>
+           <div className="text-sm text-white font-bold capitalize">{user?.email === 'mk.rabbani.cse@gmail.com' ? 'Super Admin' : 'Guest'}</div>
         </div>
       </aside>
 
@@ -251,12 +275,8 @@ export default function Portal() {
                       </div>
                     </div>
                     <div className="space-y-3">
-                      {[
-                        { time: '2 mins ago', title: 'New Research Paper', desc: 'Added to Repository', icon: BookOpen, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                        { time: '1 hour ago', title: 'Faculty Profile Update', desc: 'Internal Medicine Dept', icon: Users2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                        { time: '3 hours ago', title: 'System Security Audit', desc: 'Rules deployed successfully', icon: Database, color: 'text-slate-600', bg: 'bg-slate-50' }
-                      ].map(item => (
-                        <div key={item.title} className="flex items-center gap-4 group">
+                      {recentActivity.length > 0 ? recentActivity.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-4 group">
                            <div className="text-[9px] font-bold text-gray-400 w-16 uppercase tracking-tighter">{item.time}</div>
                            <div className="flex-grow p-4 rounded-2xl bg-white border border-gray-100 shadow-sm flex items-center justify-between group-hover:border-indigo-100 transition-all">
                               <div className="flex items-center gap-3">
@@ -265,12 +285,16 @@ export default function Portal() {
                                 </div>
                                 <div className="space-y-0.5">
                                   <div className="text-sm font-bold text-gray-900">{item.title}</div>
-                                  <div className="text-[10px] text-gray-500">{item.desc}</div>
+                                  <div className="text-[10px] text-gray-500 line-clamp-1">{item.desc}</div>
                                 </div>
                               </div>
                            </div>
                         </div>
-                      ))}
+                      )) : (
+                        <div className="text-center py-8 text-xs text-gray-400 border border-dashed border-gray-200 rounded-2xl">
+                          No recent activities logged
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -452,13 +476,75 @@ export default function Portal() {
                               <h3 className="text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">{ann.title}</h3>
                               <p className="text-gray-500 font-light leading-relaxed text-sm">{ann.content}</p>
                            </div>
-                           <button className="shrink-0 p-3 rounded-xl bg-gray-50 text-gray-400 hover:text-indigo-600 border border-gray-100 transition-all">
-                             <ExternalLink className="w-5 h-5" />
-                           </button>
+                           <div className="flex flex-col gap-2 shrink-0">
+                             <button 
+                               onClick={() => deleteAnnouncement(ann.id)}
+                               className="p-3 rounded-xl bg-red-50 text-red-400 hover:bg-red-500 hover:text-white border border-red-100 transition-all shadow-sm"
+                               title="Delete Announcement"
+                             >
+                                <Trash2 className="w-5 h-5" />
+                             </button>
+                             <button className="p-3 rounded-xl bg-gray-50 text-gray-400 hover:text-indigo-600 border border-gray-100 transition-all shadow-sm">
+                               <ExternalLink className="w-5 h-5" />
+                             </button>
+                           </div>
                         </div>
                      </div>
                    ))}
                  </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'settings' && (
+              <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} key="settings" className="space-y-8">
+                  <header>
+                    <h2 className="text-2xl font-bold text-gray-900">System Configuration</h2>
+                    <p className="text-gray-400 text-sm">Fine-tune the college digital infrastructure.</p>
+                  </header>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <div className="p-8 rounded-[2rem] bg-white border border-gray-100 shadow-sm space-y-6">
+                        <div className="flex items-center gap-4">
+                           <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                              <Database className="w-6 h-6" />
+                           </div>
+                           <h3 className="font-bold text-gray-900 uppercase tracking-tight">Database Status</h3>
+                        </div>
+                        <div className="space-y-4">
+                           <div className="flex justify-between items-center text-sm">
+                              <span className="text-gray-500">Firestore Instance</span>
+                              <span className="font-bold text-emerald-500">Connected</span>
+                           </div>
+                           <div className="flex justify-between items-center text-sm">
+                              <span className="text-gray-500">Storage Usage</span>
+                              <span className="font-bold text-gray-900">12.4 MB / 5 GB</span>
+                           </div>
+                        </div>
+                        <button className="w-full py-3 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-gray-600 hover:bg-gray-100 transition-all">
+                           Run System Audit
+                        </button>
+                     </div>
+
+                     <div className="p-8 rounded-[2rem] bg-white border border-gray-100 shadow-sm space-y-6">
+                        <div className="flex items-center gap-4">
+                           <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">
+                              <Settings className="w-6 h-6" />
+                           </div>
+                           <h3 className="font-bold text-gray-900 uppercase tracking-tight">Global Settings</h3>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="space-y-1">
+                               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Campus Lockdown Mode</label>
+                               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                  <span className="text-xs font-medium text-gray-600">Restricted Access</span>
+                                  <div className="w-10 h-5 bg-gray-200 rounded-full relative cursor-not-allowed">
+                                     <div className="absolute left-1 top-1 w-3 h-3 bg-white rounded-full" />
+                                  </div>
+                               </div>
+                            </div>
+                        </div>
+                     </div>
+                  </div>
               </motion.div>
             )}
           </AnimatePresence>

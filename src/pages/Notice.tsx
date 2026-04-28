@@ -12,9 +12,9 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Notice() {
   const { t } = useTranslation();
-  const { profile } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'staff';
+  const isAdmin = user?.email === 'mk.rabbani.cse@gmail.com';
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
   const [notices, setNotices] = useState<Announcement[]>([]);

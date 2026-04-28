@@ -15,8 +15,8 @@ import { cn } from '../lib/utils';
 type ActiveView = 'repository' | 'meu' | 'rmc';
 
 export default function Research() {
-  const { profile } = useAuth();
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'staff' || profile?.email === 'mk.rabbani.cse@gmail.com';
+  const { user } = useAuth();
+  const isAdmin = user?.email === 'mk.rabbani.cse@gmail.com';
   const [activeView, setActiveView] = useState<ActiveView>('repository');
   const [papers, setPapers] = useState<ResearchPaper[]>([]);
   const [searchTerm, setSearchTerm] = useState('');

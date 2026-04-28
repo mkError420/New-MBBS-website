@@ -2,18 +2,17 @@
   "entities": {
     "User": {
       "title": "User",
-      "description": "Represents a user (student, staff, or admin) in the system.",
+      "description": "Represents a user in the system.",
       "type": "object",
       "properties": {
         "uid": { "type": "string" },
         "email": { "type": "string" },
         "displayName": { "type": "string" },
-        "role": { "type": "string", "enum": ["student", "staff", "admin"] },
         "language": { "type": "string" },
         "profileImageUrl": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["uid", "email", "role"]
+      "required": ["uid", "email"]
     },
     "Faculty": {
       "title": "Faculty Member",
@@ -65,9 +64,8 @@
         "id": { "type": "string" },
         "title": { "type": "string" },
         "content": { "type": "string" },
-        "type": { "type": "string", "enum": ["news", "event", "deadline"] },
-        "date": { "type": "string", "format": "date-time" },
-        "recipients": { "type": "string", "enum": ["all", "student", "staff"] }
+        "type": { "type": "string", "enum": ["notice", "event", "deadline"] },
+        "date": { "type": "string", "format": "date-time" }
       }
     },
     "ChatMessage": {

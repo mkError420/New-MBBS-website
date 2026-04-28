@@ -105,7 +105,7 @@ export default function Navbar() {
               </AnimatePresence>
             </div>
 
-            {user && (
+            {user && user.email === 'mk.rabbani.cse@gmail.com' && (
               <div className="flex items-center gap-3">
                 <Link 
                   to="/portal" 
@@ -114,8 +114,13 @@ export default function Navbar() {
                   Portal
                 </Link>
                 <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
-                  {profile?.displayName?.[0] || user.email?.[0]?.toUpperCase()}
+                  {user.email?.[0]?.toUpperCase()}
                 </div>
+              </div>
+            )}
+            {user && user.email !== 'mk.rabbani.cse@gmail.com' && (
+              <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
+                {user.email?.[0]?.toUpperCase()}
               </div>
             )}
           </div>
@@ -191,7 +196,7 @@ export default function Navbar() {
                   <span>{item.name}</span>
                 </Link>
               ))}
-              {user ? (
+              {user && user.email === 'mk.rabbani.cse@gmail.com' ? (
                 <Link
                   to="/portal"
                   onClick={() => setIsOpen(false)}
@@ -200,7 +205,7 @@ export default function Navbar() {
                   <GraduationCap className="w-5 h-5" />
                   <span>Admin Portal</span>
                 </Link>
-              ) : (
+              ) : !user && (
                 <Link
                   to="/login"
                   onClick={() => setIsOpen(false)}

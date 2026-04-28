@@ -3,7 +3,6 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Default deny: Block all read/write at the root
     match /{document=**} {
-      allow read, write: if isSignedIn() && request.auth.token.email == 'mk.rabbani.cse@gmail.com';
       allow read, write: if false;
     }
 
@@ -17,23 +16,19 @@ service cloud.firestore {
     }
     
     function isSuperAdmin() {
-      return isSignedIn() && request.auth.token.email == 'mk.rabbani.cse@gmail.com';
+      return isSignedIn() && (request.auth.token.email == 'mk.rabbani.cse@gmail.com');
     }
     
     function isOwner(userId) { 
       return isSignedIn() && request.auth.uid == userId; 
     }
-    
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
 
     function isAdmin() { 
-      return isSuperAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'admin');
+      return isSuperAdmin();
     }
 
     function isStaff() { 
-      return isSuperAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (getUserData().role == 'staff' || getUserData().role == 'admin'));
+      return isSuperAdmin();
     }
     
     function isValidId(id) { 
@@ -50,18 +45,11 @@ service cloud.firestore {
 
     // User profiles
     match /users/{userId} {
-      allow get: if isOwner(userId) || isStaff() || isSuperAdmin();
-      allow list: if isStaff() || isSuperAdmin();
+      allow get: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
+      allow list: if isSuperAdmin();
       
-      allow create: if isOwner(userId) 
-        && isValidId(userId)
-        && (incoming().role == 'guest' || isSuperAdmin())
-        && incoming().uid == userId;
-        
-      allow update: if isSuperAdmin() || (isOwner(userId) 
-        && incoming().role == existing().role
-        && incoming().uid == existing().uid);
-        
+      allow create: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
+      allow update: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
       allow delete: if isSuperAdmin();
     }
 

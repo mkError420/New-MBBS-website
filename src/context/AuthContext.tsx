@@ -28,12 +28,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (docSnap.exists()) {
             setProfile(docSnap.data() as UserProfile);
           } else {
-            const role = user.email === 'mk.rabbani.cse@gmail.com' ? 'admin' : 'guest';
             const newProfile: UserProfile = {
               uid: user.uid,
               email: user.email,
-              displayName: user.displayName,
-              role: role
+              displayName: user.displayName
             };
             // Create the profile in Firestore
             try {

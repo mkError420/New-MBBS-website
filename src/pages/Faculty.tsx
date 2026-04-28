@@ -20,8 +20,8 @@ interface ExtendedFacultyMember extends FacultyMember {
 }
 
 export default function Faculty() {
-  const { profile } = useAuth();
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'staff' || profile?.email === 'mk.rabbani.cse@gmail.com';
+  const { user } = useAuth();
+  const isAdmin = user?.email === 'mk.rabbani.cse@gmail.com';
   const [searchTerm, setSearchTerm] = useState('');
   const [activeDept, setActiveDept] = useState('All');
   const [selectedMember, setSelectedMember] = useState<ExtendedFacultyMember | null>(null);
