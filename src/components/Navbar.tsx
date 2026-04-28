@@ -63,17 +63,10 @@ export default function Navbar() {
               <span className="text-xs font-bold uppercase">{i18n.language}</span>
             </button>
 
-            {user ? (
+            {user && (
               <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
                 {profile?.displayName?.[0] || user.email?.[0]?.toUpperCase()}
               </div>
-            ) : (
-              <Link
-                to="/login"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors shadow-sm"
-              >
-                {t('nav.login')}
-              </Link>
             )}
           </div>
 
@@ -116,16 +109,7 @@ export default function Navbar() {
                   <span>{item.name}</span>
                 </Link>
               ))}
-              {!user && (
-                <Link
-                  to="/login"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center space-x-3 px-3 py-3 rounded-md text-base font-bold text-indigo-600 bg-indigo-50"
-                >
-                  <LogIn className="w-5 h-5" />
-                  <span>{t('nav.login')}</span>
-                </Link>
-              )}
+
             </div>
           </motion.div>
         )}

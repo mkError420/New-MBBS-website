@@ -15,6 +15,21 @@ import NewsTicker from '../components/NewsTicker';
 export default function Home() {
   const { t } = useTranslation();
   const [openFaq, setOpenFaq] = React.useState<number | null>(null);
+  const [currentHeroSlide, setCurrentHeroSlide] = React.useState(0);
+
+  const heroImages = [
+    "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=2000",
+    "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2000",
+    "https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&q=80&w=2000",
+    "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=2000"
+  ];
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentHeroSlide((prev) => (prev + 1) % heroImages.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
 
   const stats = [
     { label: 'Founded', value: '1985', icon: GraduationCap },
@@ -77,30 +92,40 @@ export default function Home() {
 
   return (
     <div className="space-y-20 pb-20">
-      {/* Hero Section */}
-      <section className="relative h-[80vh] flex items-center overflow-hidden bg-slate-900">
-        <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=2000" 
-            alt="Hero Background" 
-            className="w-full h-full object-cover opacity-40"
-            referrerPolicy="no-referrer"
-          />
-        </div>
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-white">
+      {/* Hero Section - Banner Carousel */}
+      <section className="relative h-[60vh] md:h-[85vh] overflow-hidden bg-slate-900 border-b border-white/5">
+        <AnimatePresence mode="wait">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="max-w-2xl space-y-6"
+            key={currentHeroSlide}
+            initial={{ opacity: 0, scale: 1.1 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            className="absolute inset-0"
           >
-            <h1 className="text-5xl md:text-7xl font-bold leading-tight tracking-tight">
-              {t('home.welcome')}
-            </h1>
-            <p className="text-xl text-slate-300 font-light leading-relaxed">
-              {t('home.description')}
-            </p>
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-black/20 z-10" />
+            <img 
+              src={heroImages[currentHeroSlide]} 
+              alt={`GMC Excellence ${currentHeroSlide + 1}`} 
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
           </motion.div>
+        </AnimatePresence>
+
+        {/* Carousel Indicators */}
+        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 flex gap-3 px-6 py-3 bg-black/20 backdrop-blur-xl rounded-full border border-white/10">
+          {heroImages.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentHeroSlide(idx)}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-500",
+                currentHeroSlide === idx ? "w-12 bg-indigo-500" : "w-3 bg-white/20 hover:bg-white/40"
+              )}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
+          ))}
         </div>
       </section>
 
