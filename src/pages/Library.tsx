@@ -2,23 +2,39 @@ import React, { useState } from 'react';
 import { 
   Library as LibraryIcon, Search, SearchCode, Database, 
   Map, Clock, Globe, BookOpen, ChevronRight, Hash, 
-  LayoutGrid, List, FileSearch, Pin
+  LayoutGrid, List, FileSearch, Pin, Filter
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import { LIBRARY_DATA, LibraryItem } from '../data/library';
 
 export default function Library() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [activeType, setActiveType] = useState<'All' | 'Physical' | 'Electronic'>('All');
 
-  const books = [
-    { id: 'b1', title: 'Guyton & Hall: Textbook of Physiology', author: 'Guyton', section: 'Physiology', code: '612.01 CAL', type: 'Physical' },
-    { id: 'b2', title: 'Gray\'s Anatomy', author: 'Henry Gray', section: 'Anatomy', code: '611 GRA', type: 'Electronic' },
-    { id: 'b3', title: 'Harrisons Principles of Internal Medicine', author: 'Harrison', section: 'Medicine', code: '616 HAR', type: 'Physical' },
-    { id: 'b4', title: 'Bailey & Love\'s Short Practice of Surgery', author: 'Bailey', section: 'Surgery', code: '617 BAI', type: 'Physical' },
-    { id: 'b5', title: 'Robbins Basic Pathology', author: 'Robbins', section: 'Pathology', code: '616.07 ROB', type: 'Electronic' },
-    { id: 'b6', title: 'The ECG Made Easy', author: 'John Hampton', section: 'Cardiology', code: 'E-RESOURCES', type: 'Electronic' }
-  ];
+  const categories = ['All', ...new Set(LIBRARY_DATA.map(book => book.section))];
+
+  const filteredBooks = LIBRARY_DATA.filter(book => {
+    const matchesSearch = 
+      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      book.code.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesCategory = activeCategory === 'All' || book.section === activeCategory;
+    const matchesType = activeType === 'All' || book.type === activeType;
+
+    return matchesSearch && matchesCategory && matchesType;
+  });
+
+  const handleAction = (book: LibraryItem) => {
+    if (book.type === 'Electronic') {
+      window.open('#', '_blank');
+    } else {
+      alert(`Request logged for: ${book.title}. Reference: ${book.code}`);
+    }
+  };
 
   return (
     <div className="bg-[#fbfcff] min-h-screen text-gray-900">
@@ -52,19 +68,42 @@ export default function Library() {
                 <p className="text-gray-400 font-medium max-w-xl">Access our centralized medical repository featuring over 30,000 physical and digital scholarly assets.</p>
              </div>
 
-             <div className="flex bg-gray-50 rounded-2xl border border-gray-100 p-1.5 shadow-sm">
-                <button 
-                  onClick={() => setViewMode('grid')}
-                  className={cn("p-3 rounded-xl transition-all", viewMode === 'grid' ? "bg-white text-indigo-600 shadow-xl shadow-indigo-500/5 ring-1 ring-black/5" : "text-gray-400")}
-                >
-                  <LayoutGrid className="w-5 h-5" />
-                </button>
-                <button 
-                  onClick={() => setViewMode('list')}
-                  className={cn("p-3 rounded-xl transition-all", viewMode === 'list' ? "bg-white text-indigo-600 shadow-xl shadow-indigo-500/5 ring-1 ring-black/5" : "text-gray-400")}
-                >
-                  <List className="w-5 h-5" />
-                </button>
+             <div className="flex flex-col gap-4">
+               <div className="flex bg-gray-50 rounded-2xl border border-gray-100 p-1.5 shadow-sm">
+                  <button 
+                    onClick={() => setActiveType('All')}
+                    className={cn("px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", activeType === 'All' ? "bg-white text-indigo-600 shadow-sm" : "text-gray-400")}
+                  >
+                    All
+                  </button>
+                  <button 
+                    onClick={() => setActiveType('Physical')}
+                    className={cn("px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", activeType === 'Physical' ? "bg-white text-indigo-600 shadow-sm" : "text-gray-400")}
+                  >
+                    Physical
+                  </button>
+                  <button 
+                    onClick={() => setActiveType('Electronic')}
+                    className={cn("px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", activeType === 'Electronic' ? "bg-white text-indigo-600 shadow-sm" : "text-gray-400")}
+                  >
+                    Electronic
+                  </button>
+               </div>
+               
+               <div className="flex bg-gray-50 rounded-2xl border border-gray-100 p-1.5 shadow-sm self-end">
+                  <button 
+                    onClick={() => setViewMode('grid')}
+                    className={cn("p-3 rounded-xl transition-all", viewMode === 'grid' ? "bg-white text-indigo-600 shadow-xl shadow-indigo-500/5 ring-1 ring-black/5" : "text-gray-400")}
+                  >
+                    <LayoutGrid className="w-5 h-5" />
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('list')}
+                    className={cn("p-3 rounded-xl transition-all", viewMode === 'list' ? "bg-white text-indigo-600 shadow-xl shadow-indigo-500/5 ring-1 ring-black/5" : "text-gray-400")}
+                  >
+                    <List className="w-5 h-5" />
+                  </button>
+               </div>
              </div>
           </header>
 
@@ -85,6 +124,23 @@ export default function Library() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                    />
                 </div>
+
+                <div className="flex flex-wrap gap-3">
+                   {categories.map(cat => (
+                     <button
+                      key={cat}
+                      onClick={() => setActiveCategory(cat)}
+                      className={cn(
+                        "px-6 py-3 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all border",
+                        activeCategory === cat 
+                          ? "bg-indigo-600 border-indigo-500 text-white shadow-xl shadow-indigo-500/20" 
+                          : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10"
+                      )}
+                     >
+                       {cat}
+                     </button>
+                   ))}
+                </div>
              </div>
              <BookOpen className="absolute bottom-0 right-0 w-96 h-96 text-white/5 -rotate-12 translate-y-1/4 translate-x-1/4" />
           </section>
@@ -94,12 +150,13 @@ export default function Library() {
             viewMode === 'grid' ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
           )}>
              <AnimatePresence mode="popLayout">
-                {books.filter(b => b.title.toLowerCase().includes(searchQuery.toLowerCase())).map((book, i) => (
+                {filteredBooks.map((book, i) => (
                   <motion.div 
                     key={book.id}
                     layout
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
                     className={cn(
                       "bg-white rounded-[2.5rem] border border-gray-100 transition-all flex flex-col justify-between group overflow-hidden",
                       viewMode === 'grid' ? "p-10 hover:shadow-2xl hover:border-indigo-100" : "flex-row items-center p-8 hover:bg-gray-50"
@@ -140,13 +197,32 @@ export default function Library() {
                       "border-gray-50 flex items-center justify-between",
                       viewMode === 'grid' ? "pt-10 mt-10 border-t" : "pl-10"
                     )}>
-                       <button className="text-indigo-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-3 group/btn">
+                       <button 
+                        onClick={() => handleAction(book)}
+                        className="text-indigo-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-3 group/btn"
+                       >
                           {book.type === 'Electronic' ? 'Open Resource' : 'Log Request'}
                           <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-2 transition-transform" />
                        </button>
                     </div>
                   </motion.div>
                 ))}
+                {filteredBooks.length === 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }}
+                    className="col-span-full py-20 text-center space-y-4"
+                  >
+                    <FileSearch className="w-16 h-16 text-gray-200 mx-auto" />
+                    <p className="text-gray-400 font-medium italic">No matches found for your search criteria.</p>
+                    <button 
+                      onClick={() => { setSearchQuery(''); setActiveCategory('All'); setActiveType('All'); }}
+                      className="text-indigo-600 text-xs font-bold uppercase tracking-widest hover:underline"
+                    >
+                      Clear all filters
+                    </button>
+                  </motion.div>
+                )}
              </AnimatePresence>
           </section>
 
