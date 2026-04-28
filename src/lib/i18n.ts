@@ -16,6 +16,8 @@ i18n
             departments: 'Departments',
             admissions: 'Admissions',
             research: 'Research',
+            journal: 'Journal',
+            library: 'Library',
             news: 'News',
             notice: 'Notice',
             portal: 'Student Portal',

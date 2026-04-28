@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Menu, X, User, GraduationCap, Map, Newspaper, BookOpen, Search, LogIn, Globe, Bell } from 'lucide-react';
+import { Menu, X, User, GraduationCap, Map, Newspaper, BookOpen, Search, LogIn, Globe, Bell, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
@@ -17,6 +17,8 @@ export default function Navbar() {
     { id: 'faculty', name: t('nav.faculty'), path: '/faculty', icon: User },
     { id: 'departments', name: t('nav.departments'), path: '/departments', icon: BookOpen },
     { id: 'research', name: t('nav.research'), path: '/research', icon: Search },
+    { id: 'journal', name: t('nav.journal'), path: '/journal', icon: BookOpen },
+    { id: 'library', name: t('nav.library'), path: '/library', icon: Layers },
     { id: 'news', name: t('nav.news'), path: '/news', icon: Newspaper },
     { id: 'notice', name: t('nav.notice'), path: '/notice', icon: Bell },
   ];

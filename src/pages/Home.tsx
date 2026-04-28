@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
+import { NOTICES } from '../data/notices';
+import NewsTicker from '../components/NewsTicker';
 
 export default function Home() {
   const { t } = useTranslation();
@@ -71,12 +73,7 @@ export default function Home() {
     "https://images.unsplash.com/photo-1576089172869-4f5f6f315620?auto=format&fit=crop&q=80&w=800"
   ];
 
-  const notices = [
-    { title: 'Admission Open for 2024-25', date: 'Oct 15' },
-    { title: 'Annual Convocation Ceremony', date: 'Nov 02' },
-    { title: 'New Research Grants Announced', date: 'Oct 28' },
-    { title: 'Winter Vacation Schedule', date: 'Dec 20' }
-  ];
+  const notices = NOTICES.slice(0, 4);
 
   return (
     <div className="space-y-20 pb-20">
@@ -103,24 +100,11 @@ export default function Home() {
             <p className="text-xl text-slate-300 font-light leading-relaxed">
               {t('home.description')}
             </p>
-            <div className="flex flex-wrap gap-4 pt-4">
-              <Link 
-                to="/departments"
-                className="bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-indigo-700 transition-all flex items-center gap-2 group shadow-lg shadow-indigo-500/20"
-              >
-                {t('home.explore')}
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link 
-                to="/tour"
-                className="bg-white/10 backdrop-blur-md text-white border border-white/20 px-8 py-4 rounded-xl font-bold hover:bg-white/20 transition-all"
-              >
-                {t('home.tour')}
-              </Link>
-            </div>
           </motion.div>
         </div>
       </section>
+
+      <NewsTicker />
 
       {/* Main Content Layout with Sidebar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -318,6 +302,43 @@ export default function Home() {
           {/* Sidebar Area */}
           <aside className="lg:col-span-4 space-y-8">
             
+            {/* Quick Actions */}
+            <div className="grid grid-cols-1 gap-4">
+              <Link 
+                to="/departments"
+                className="bg-indigo-600 text-white p-6 rounded-3xl font-bold hover:bg-indigo-700 transition-all flex flex-col gap-4 shadow-xl shadow-indigo-500/20 group relative overflow-hidden"
+              >
+                <div className="flex justify-between items-center relative z-10">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-md">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </div>
+                <div className="relative z-10">
+                   <div className="text-xs opacity-60 uppercase tracking-widest mb-1 font-black">Academic</div>
+                   <div className="text-xl tracking-tight">Explore Departments</div>
+                </div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full translate-x-1/2 -translate-y-1/2 blur-2xl" />
+              </Link>
+              
+              <Link 
+                to="/tour"
+                className="bg-slate-900 border border-slate-800 text-white p-6 rounded-3xl font-bold hover:bg-slate-800 transition-all flex flex-col gap-4 shadow-xl shadow-slate-900/10 group relative overflow-hidden"
+              >
+                <div className="flex justify-between items-center relative z-10">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                    <ImageIcon className="w-5 h-5 text-indigo-400" />
+                  </div>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform text-white/50" />
+                </div>
+                <div className="relative z-10">
+                   <div className="text-xs opacity-40 uppercase tracking-widest mb-1 font-black">Interactive</div>
+                   <div className="text-xl tracking-tight">Virtual Campus Tour</div>
+                </div>
+                 <div className="absolute bottom-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full translate-x-1/3 translate-y-1/3 blur-xl" />
+              </Link>
+            </div>
+            
             {/* Notice Board */}
             <div className="bg-slate-900 rounded-3xl p-6 text-white overflow-hidden relative group">
               <div className="flex items-center gap-3 border-b border-white/10 pb-4 mb-6 relative z-10">
@@ -327,19 +348,22 @@ export default function Home() {
                 <h3 className="font-bold text-xl tracking-tight">Notice Board</h3>
               </div>
               <div className="space-y-4 relative z-10">
-                {notices.map((notice, idx) => (
-                  <div key={idx} className="group/notice cursor-pointer">
-                    <div className="flex gap-4 items-start">
-                      <div className="shrink-0 w-12 text-center bg-white/5 rounded-lg py-1 border border-white/10 group-hover/notice:bg-indigo-600 group-hover/notice:border-indigo-500 transition-all">
-                        <div className="text-[10px] uppercase font-bold opacity-50 tracking-tighter">{notice.date.split(' ')[0]}</div>
-                        <div className="text-sm font-bold">{notice.date.split(' ')[1]}</div>
+                {notices.map((notice, idx) => {
+                  const [month, day] = notice.date.split(' ');
+                  return (
+                    <Link key={idx} to="/notice" className="group/notice cursor-pointer block">
+                      <div className="flex gap-4 items-start">
+                        <div className="shrink-0 w-12 text-center bg-white/5 rounded-lg py-1 border border-white/10 group-hover/notice:bg-indigo-600 group-hover/notice:border-indigo-500 transition-all">
+                          <div className="text-[10px] uppercase font-bold opacity-50 tracking-tighter">{month}</div>
+                          <div className="text-sm font-bold">{day.replace(',', '')}</div>
+                        </div>
+                        <p className="text-sm text-slate-300 group-hover/notice:text-white transition-colors py-1">
+                          {notice.title}
+                        </p>
                       </div>
-                      <p className="text-sm text-slate-300 group-hover/notice:text-white transition-colors py-1">
-                        {notice.title}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                    </Link>
+                  );
+                })}
               </div>
               <Link to="/notice" className="mt-8 block text-center py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-indigo-600 transition-all relative z-10">
                 View All Notices

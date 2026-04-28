@@ -14,6 +14,8 @@ import Portal from './pages/Portal';
 import Research from './pages/Research';
 import Departments from './pages/Departments';
 import News from './pages/News';
+import Journal from './pages/Journal';
+import Library from './pages/Library';
 import Notice from './pages/Notice';
 import VirtualTour from './pages/VirtualTour';
 
@@ -28,6 +30,8 @@ export default function App() {
             <Route path="/departments" element={<Departments />} />
             <Route path="/research" element={<Research />} />
             <Route path="/news" element={<News />} />
+            <Route path="/journal" element={<Journal />} />
+            <Route path="/library" element={<Library />} />
             <Route path="/notice" element={<Notice />} />
             <Route path="/login" element={<Login />} />
             <Route path="/portal" element={<Portal />} />
