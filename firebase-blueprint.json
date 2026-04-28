@@ -1,0 +1,113 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a user (student, staff, or admin) in the system.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["student", "staff", "admin"] },
+        "language": { "type": "string" },
+        "profileImageUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Faculty": {
+      "title": "Faculty Member",
+      "description": "Information about medical college faculty members.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "department": { "type": "string" },
+        "designation": { "type": "string" },
+        "specialization": { "type": "string" },
+        "bio": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "publications": { "type": "array" }
+      }
+    },
+    "Course": {
+      "title": "Course",
+      "description": "Academic course details.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "department": { "type": "string" },
+        "duration": { "type": "string" },
+        "syllabus": { "type": "string" },
+        "eligibility": { "type": "string" }
+      }
+    },
+    "ResearchPaper": {
+      "title": "Research Paper",
+      "description": "A medical research paper or publication.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "authors": { "type": "array" },
+        "abstract": { "type": "string" },
+        "publishedDate": { "type": "string", "format": "date" },
+        "journal": { "type": "string" },
+        "tags": { "type": "array" }
+      }
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Important updates and news announcements.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "type": { "type": "string", "enum": ["news", "event", "deadline"] },
+        "date": { "type": "string", "format": "date-time" },
+        "recipients": { "type": "string", "enum": ["all", "student", "staff"] }
+      }
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "A message in a real-time chat room.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "room": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles and settings."
+    },
+    "/faculty/{facultyId}": {
+      "schema": "Faculty",
+      "description": "Faculty repository."
+    },
+    "/courses/{courseId}": {
+      "schema": "Course",
+      "description": "Academic course catalog."
+    },
+    "/research/{paperId}": {
+      "schema": "ResearchPaper",
+      "description": "Searchable research database."
+    },
+    "/announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "Global and targeted announcements."
+    },
+    "/chats/{chatRoomId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Real-time chat messages."
+    }
+  }
+}

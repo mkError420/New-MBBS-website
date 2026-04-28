@@ -1,0 +1,63 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isAdmin() { return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'; }
+    function isStaff() { return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['staff', 'admin']; }
+    
+    function isValidId(id) { return id is string && id.size() <= 128; }
+    function isValidText(text, max) { return text is string && text.size() <= max; }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) && request.resource.data.role == 'student';
+      allow update: if isOwner(userId) && request.resource.data.role == resource.data.role;
+      allow delete: if false;
+    }
+
+    // Faculty members (Public read)
+    match /faculty/{facultyId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // Courses (Public read)
+    match /courses/{courseId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // Research papers (Public read)
+    match /research/{paperId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // Announcements
+    match /announcements/{annId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // Chat rooms and messages
+    match /chats/{roomId} {
+      allow read: if isSignedIn();
+      
+      match /messages/{msgId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() 
+          && request.resource.data.senderId == request.auth.uid
+          && isValidText(request.resource.data.text, 500);
+        allow update, delete: if false;
+      }
+    }
+  }
+}

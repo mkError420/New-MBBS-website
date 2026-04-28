@@ -1,0 +1,52 @@
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../lib/firebase';
+import { UserProfile } from '../types';
+
+interface AuthContextType {
+  user: User | null;
+  profile: UserProfile | null;
+  loading: boolean;
+}
+
+const AuthContext = createContext<AuthContextType>({ user: null, profile: null, loading: true });
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      setUser(user);
+      if (user) {
+        const docRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setProfile(docSnap.data() as UserProfile);
+        } else {
+          // If no profile exists, we can create a default one or just leave it null
+          setProfile({
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            role: 'student' // Default role
+          });
+        }
+      } else {
+        setProfile(null);
+      }
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ user, profile, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => useContext(AuthContext);
